@@ -1,0 +1,85 @@
+.fas {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2em;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.fas::before {
+  display: inline-block;
+}
+
+.fa-boxes::before {
+  content: "[]";
+}
+
+.fa-tachometer-alt::before {
+  content: "#";
+}
+
+.fa-warehouse::before {
+  content: "H";
+}
+
+.fa-truck::before {
+  content: "T";
+}
+
+.fa-search::before {
+  content: "?";
+}
+
+.fa-chart-bar::before {
+  content: "=";
+}
+
+.fa-sign-in-alt::before {
+  content: ">";
+}
+
+.fa-user-plus::before {
+  content: "+";
+}
+
+.fa-sign-out-alt::before {
+  content: "<";
+}
+
+.fa-plus::before {
+  content: "+";
+}
+
+.fa-times::before {
+  content: "x";
+}
+
+.fa-box::before {
+  content: "B";
+}
+
+.fa-edit::before {
+  content: "E";
+}
+
+.fa-trash::before {
+  content: "D";
+}
+
+.fa-exclamation-triangle::before {
+  content: "!";
+}
+
+.fa-exclamation-circle::before {
+  content: "!";
+}
+
+.fa-info-circle::before {
+  content: "i";
+}
+
+.fa-check-circle::before {
+  content: "v";
+}

@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Advanced Inventory Management System</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="icons.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="nav-container">
+        <div class="nav-brand">
+          <i class="fas fa-boxes"></i>
+          <span>InventoryPro</span>
+        </div>
+        <div class="nav-menu" id="navMenu">
+          <a href="#dashboard" class="nav-link active" data-section="dashboard">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+          </a>
+          <a href="#inventory" class="nav-link" data-section="inventory">
+            <i class="fas fa-warehouse"></i> Inventory
+          </a>
+          <a href="#suppliers" class="nav-link" data-section="suppliers">
+            <i class="fas fa-truck"></i> Suppliers
+          </a>
+          <a href="#search" class="nav-link" data-section="search">
+            <i class="fas fa-search"></i> Search
+          </a>
+          <a href="#analytics" class="nav-link" data-section="analytics">
+            <i class="fas fa-chart-bar"></i> Analytics
+          </a>
+        </div>
+        <div class="nav-auth" id="navAuth">
+          <button class="btn btn-outline" id="loginBtn">
+            <i class="fas fa-sign-in-alt"></i> Login
+          </button>
+          <button class="btn btn-primary" id="registerBtn">
+            <i class="fas fa-user-plus"></i> Register
+          </button>
+        </div>
+        <div class="nav-user" id="navUser" style="display: none">
+          <span id="userInfo"></span>
+          <button class="btn btn-outline" id="logoutBtn">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Auth Section -->
+      <section id="authSection" class="auth-section">
+        <div class="auth-container">
+          <div class="auth-tabs">
+            <button class="auth-tab active" data-tab="login">Login</button>
+            <button class="auth-tab" data-tab="register">Register</button>
+          </div>
+          <div class="auth-forms">
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form active">
+              <h2>Welcome Back</h2>
+              <div class="form-group">
+                <label for="loginUsername">Username or Email</label>
+                <input type="text" id="loginUsername" required />
+              </div>
+              <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" required />
+              </div>
+              <button type="submit" class="btn btn-primary btn-full">
+                <i class="fas fa-sign-in-alt"></i> Login
+              </button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" class="auth-form">
+              <h2>Create Account</h2>
+              <div class="form-group">
+                <label for="registerUsername">Username</label>
+                <input type="text" id="registerUsername" required />
+              </div>
+              <div class="form-group">
+                <label for="registerEmail">Email</label>
+                <input type="email" id="registerEmail" required />
+              </div>
+              <div class="form-group">
+                <label for="registerPassword">Password</label>
+                <input type="password" id="registerPassword" required />
+              </div>
+              <div class="form-group">
+                <label for="registerRole">Role</label>
+                <select id="registerRole">
+                  <option value="user">User</option>
+                  <option value="manager">Manager</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary btn-full">
+                <i class="fas fa-user-plus"></i> Register
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dashboard Section -->
+      <section id="dashboardSection" class="section active">
+        <div class="section-header">
+          <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+        </div>
+        <div class="dashboard-grid" id="dashboardGrid">
+          <!-- Dashboard cards will be populated by JavaScript -->
+        </div>
+      </section>
+
+      <!-- Inventory Section -->
+      <section id="inventorySection" class="section">
+        <div class="section-header">
+          <h1><i class="fas fa-warehouse"></i> Inventory Management</h1>
+          <button class="btn btn-primary" id="addInventoryBtn">
+            <i class="fas fa-plus"></i> Add Item
+          </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-bar">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input
+              type="text"
+              id="inventorySearch"
+              placeholder="Search inventory..."
+            />
+          </div>
+          <select id="inventoryCategory">
+            <option value="">All Categories</option>
+          </select>
+          <select id="inventorySupplier">
+            <option value="">All Suppliers</option>
+          </select>
+          <label class="checkbox-label">
+            <input type="checkbox" id="lowStockOnly" /> Low Stock Only
+          </label>
+          <select id="inventorySort">
+            <option value="created_at">Newest First</option>
+            <option value="product_name">Name A-Z</option>
+            <option value="price_asc">Price Low-High</option>
+            <option value="price_desc">Price High-Low</option>
+            <option value="quantity">Stock Level</option>
+          </select>
+        </div>
+
+        <!-- Inventory Table -->
+        <div class="table-container">
+          <table class="data-table" id="inventoryTable">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>SKU</th>
+                <th>Category</th>
+                <th>Supplier</th>
+                <th>Stock</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventoryTableBody">
+              <!-- Table rows will be populated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" id="inventoryPagination"></div>
+      </section>
+
+      <!-- Suppliers Section -->
+      <section id="suppliersSection" class="section">
+        <div class="section-header">
+          <h1><i class="fas fa-truck"></i> Supplier Management</h1>
+          <button class="btn btn-primary" id="addSupplierBtn">
+            <i class="fas fa-plus"></i> Add Supplier
+          </button>
+        </div>
+
+        <!-- Suppliers Table -->
+        <div class="table-container">
+          <table class="data-table" id="suppliersTable">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>City</th>
+                <th>Rating</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="suppliersTableBody">
+              <!-- Table rows will be populated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" id="suppliersPagination"></div>
+      </section>
+
+      <!-- Search Section -->
+      <section id="searchSection" class="section">
+        <div class="section-header">
+          <h1><i class="fas fa-search"></i> Product Search</h1>
+        </div>
+
+        <!-- Advanced Search Filters -->
+        <div class="search-filters">
+          <div class="filter-row">
+            <div class="filter-group">
+              <label for="searchQuery">Search Products</label>
+              <input
+                type="text"
+                id="searchQuery"
+                placeholder="Enter product name, SKU, or description"
+              />
+            </div>
+            <div class="filter-group">
+              <label for="searchCategory">Category</label>
+              <select id="searchCategory">
+                <option value="">All Categories</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="searchSupplier">Supplier</label>
+              <input
+                type="text"
+                id="searchSupplier"
+                placeholder="Supplier name"
+              />
+            </div>
+          </div>
+          <div class="filter-row">
+            <div class="filter-group">
+              <label for="minPrice">Min Price</label>
+              <input
+                type="number"
+                id="minPrice"
+                placeholder="0"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div class="filter-group">
+              <label for="maxPrice">Max Price</label>
+              <input
+                type="number"
+                id="maxPrice"
+                placeholder="10000"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div class="filter-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="inStockOnly" /> In Stock Only
+              </label>
+            </div>
+            <div class="filter-group">
+              <label for="searchSort">Sort By</label>
+              <select id="searchSort">
+                <option value="relevance">Relevance</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+                <option value="name">Name A-Z</option>
+                <option value="newest">Newest First</option>
+              </select>
+            </div>
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-primary" id="searchBtn">
+              <i class="fas fa-search"></i> Search
+            </button>
+            <button class="btn btn-outline" id="clearFiltersBtn">
+              <i class="fas fa-times"></i> Clear Filters
+            </button>
+            <label
+              for="realtimeToggle"
+              style="margin-left: auto; cursor: pointer"
+            >
+              <input
+                type="checkbox"
+                id="realtimeToggle"
+                checked
+                style="margin-right: 8px"
+              />
+              Real-time updates
+            </label>
+          </div>
+        </div>
+
+        <!-- Search Results -->
+        <div class="search-results" id="searchResults">
+          <!-- Results will be populated by JavaScript -->
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" id="searchPagination"></div>
+      </section>
+
+      <!-- Analytics Section -->
+      <section id="analyticsSection" class="section">
+        <div class="section-header">
+          <h1><i class="fas fa-chart-bar"></i> Analytics & Reports</h1>
+        </div>
+
+        <div class="analytics-grid">
+          <!-- Analytics charts and reports will be populated by JavaScript -->
+        </div>
+      </section>
+    </main>
+
+    <!-- Modals -->
+    <!-- Add/Edit Inventory Modal -->
+    <div class="modal" id="inventoryModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="inventoryModalTitle">Add Inventory Item</h3>
+          <button class="modal-close" id="inventoryModalClose">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <form id="inventoryForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="productName">Product Name *</label>
+              <input type="text" id="productName" required />
+            </div>
+            <div class="form-group">
+              <label for="productSKU">SKU</label>
+              <input type="text" id="productSKU" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="productCategory">Category</label>
+              <select id="productCategory">
+                <option value="">Select Category</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="productSupplier">Supplier *</label>
+              <select id="productSupplier" required>
+                <option value="">Select Supplier</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="productQuantity">Quantity *</label>
+              <input type="number" id="productQuantity" min="0" required />
+            </div>
+            <div class="form-group">
+              <label for="productPrice">Price *</label>
+              <input
+                type="number"
+                id="productPrice"
+                min="0"
+                step="0.01"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="productCost">Cost Price</label>
+              <input type="number" id="productCost" min="0" step="0.01" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="productDescription">Description</label>
+            <textarea id="productDescription" rows="3"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="minStockLevel">Min Stock Level</label>
+              <input type="number" id="minStockLevel" min="0" value="10" />
+            </div>
+            <div class="form-group">
+              <label for="maxStockLevel">Max Stock Level</label>
+              <input type="number" id="maxStockLevel" min="0" />
+            </div>
+            <div class="form-group">
+              <label for="productLocation">Location</label>
+              <input type="text" id="productLocation" />
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="btn btn-outline"
+              id="inventoryCancelBtn"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              id="inventorySubmitBtn"
+            >
+              Save Item
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Add/Edit Supplier Modal -->
+    <div class="modal" id="supplierModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="supplierModalTitle">Add Supplier</h3>
+          <button class="modal-close" id="supplierModalClose">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <form id="supplierForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="supplierName">Name *</label>
+              <input type="text" id="supplierName" required />
+            </div>
+            <div class="form-group">
+              <label for="supplierEmail">Email</label>
+              <input type="email" id="supplierEmail" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="supplierPhone">Phone</label>
+              <input type="tel" id="supplierPhone" />
+            </div>
+            <div class="form-group">
+              <label for="supplierCity">City *</label>
+              <input type="text" id="supplierCity" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="supplierAddress">Address</label>
+            <textarea id="supplierAddress" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="supplierRating">Rating (1-5)</label>
+            <input
+              type="number"
+              id="supplierRating"
+              min="1"
+              max="5"
+              step="0.1"
+            />
+          </div>
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="btn btn-outline"
+              id="supplierCancelBtn"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              id="supplierSubmitBtn"
+            >
+              Save Supplier
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
