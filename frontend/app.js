@@ -267,12 +267,19 @@ function clearSession() {
   stopRealtimeUpdates();
 }
 
+function setAppSectionsVisibility(isVisible) {
+  refs.sections.forEach((section) => {
+    section.style.display = isVisible ? "" : "none";
+  });
+}
+
 function showAuthenticatedUI() {
   refs.navMenu.style.display = "flex";
   refs.navAuth.style.display = "none";
   refs.navUser.style.display = "flex";
-  refs.authSection.style.display = "none";
   refs.mainContent.style.display = "block";
+  refs.authSection.style.display = "none";
+  setAppSectionsVisibility(true);
   refs.userInfo.textContent = `${state.currentUser.username} (${state.currentUser.role})`;
 }
 
@@ -280,8 +287,9 @@ function showUnauthenticatedUI() {
   refs.navMenu.style.display = "none";
   refs.navAuth.style.display = "flex";
   refs.navUser.style.display = "none";
+  refs.mainContent.style.display = "block";
   refs.authSection.style.display = "flex";
-  refs.mainContent.style.display = "none";
+  setAppSectionsVisibility(false);
 }
 
 function showAuthTab(tabName) {
