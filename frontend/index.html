@@ -28,7 +28,21 @@
           <i class="fas fa-boxes"></i>
           <span>InventoryPro</span>
         </div>
-        <div class="nav-menu hidden flex-wrap items-center gap-2 md:flex" id="navMenu">
+        <button
+          class="nav-toggle"
+          id="navToggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="navMenu"
+          aria-label="Toggle navigation"
+        >
+          <span class="nav-toggle-lines" aria-hidden="true">
+            <span class="nav-toggle-line"></span>
+            <span class="nav-toggle-line"></span>
+            <span class="nav-toggle-line"></span>
+          </span>
+        </button>
+        <div class="nav-menu" id="navMenu">
           <a href="#dashboard" class="nav-link active" data-section="dashboard">
             <i class="fas fa-tachometer-alt"></i> Dashboard
           </a>
@@ -45,7 +59,7 @@
             <i class="fas fa-chart-bar"></i> Analytics
           </a>
         </div>
-        <div class="nav-auth flex items-center gap-3" id="navAuth">
+        <div class="nav-auth" id="navAuth">
           <button class="btn btn-outline" id="loginBtn">
             <i class="fas fa-sign-in-alt"></i> Login
           </button>
@@ -53,7 +67,7 @@
             <i class="fas fa-user-plus"></i> Register
           </button>
         </div>
-        <div class="nav-user hidden items-center gap-3" id="navUser" style="display: none">
+        <div class="nav-user" id="navUser">
           <span
             id="userInfo"
             class="rounded-full border border-slate-200/80 bg-white/90 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm"
@@ -367,16 +381,8 @@
             <button class="btn btn-outline" id="clearFiltersBtn">
               <i class="fas fa-times"></i> Clear Filters
             </button>
-            <label
-              for="realtimeToggle"
-              style="margin-left: auto; cursor: pointer"
-            >
-              <input
-                type="checkbox"
-                id="realtimeToggle"
-                checked
-                style="margin-right: 8px"
-              />
+            <label for="realtimeToggle" class="realtime-pill">
+              <input type="checkbox" id="realtimeToggle" checked />
               Real-time updates
             </label>
           </div>

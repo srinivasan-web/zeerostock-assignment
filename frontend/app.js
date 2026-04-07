@@ -12,6 +12,7 @@ const API_BASE = configuredApiBase
 const state = {
   currentUser: null,
   currentSection: "dashboard",
+  isNavOpen: false,
   inventoryPage: 1,
   suppliersPage: 1,
   searchPage: 1,
@@ -57,7 +58,9 @@ npm start</code></pre>
 }
 
 function cacheDom() {
+  refs.navContainer = document.querySelector(".nav-container");
   refs.navMenu = document.getElementById("navMenu");
+  refs.navToggle = document.getElementById("navToggle");
   refs.navAuth = document.getElementById("navAuth");
   refs.navUser = document.getElementById("navUser");
   refs.userInfo = document.getElementById("userInfo");
@@ -88,11 +91,15 @@ function cacheDom() {
 function bindEvents() {
   document.getElementById("loginBtn").addEventListener("click", () => {
     showAuthTab("login");
+    closeNav();
   });
   document.getElementById("registerBtn").addEventListener("click", () => {
     showAuthTab("register");
+    closeNav();
   });
   document.getElementById("logoutBtn").addEventListener("click", logout);
+  refs.navToggle.addEventListener("click", toggleNav);
+  window.addEventListener("resize", debounce(syncResponsiveNav, 120));
 
   refs.authTabs.forEach((tab) => {
     tab.addEventListener("click", () => showAuthTab(tab.dataset.tab));
@@ -267,6 +274,35 @@ function clearSession() {
   stopRealtimeUpdates();
 }
 
+function setNavAreaVisibility(element, isVisible) {
+  element.classList.toggle("nav-visible", isVisible);
+}
+
+function isMobileViewport() {
+  return window.innerWidth <= 768;
+}
+
+function toggleNav() {
+  state.isNavOpen = !state.isNavOpen;
+  syncResponsiveNav();
+}
+
+function closeNav() {
+  if (!state.isNavOpen) {
+    return;
+  }
+
+  state.isNavOpen = false;
+  syncResponsiveNav();
+}
+
+function syncResponsiveNav() {
+  const mobile = isMobileViewport();
+
+  refs.navContainer.classList.toggle("nav-open", mobile && state.isNavOpen);
+  refs.navToggle.setAttribute("aria-expanded", String(mobile && state.isNavOpen));
+}
+
 function setAppSectionsVisibility(isVisible) {
   refs.sections.forEach((section) => {
     section.style.display = isVisible ? "" : "none";
@@ -274,22 +310,26 @@ function setAppSectionsVisibility(isVisible) {
 }
 
 function showAuthenticatedUI() {
-  refs.navMenu.style.display = "flex";
-  refs.navAuth.style.display = "none";
-  refs.navUser.style.display = "flex";
+  state.isNavOpen = false;
+  setNavAreaVisibility(refs.navMenu, true);
+  setNavAreaVisibility(refs.navAuth, false);
+  setNavAreaVisibility(refs.navUser, true);
   refs.mainContent.style.display = "block";
   refs.authSection.style.display = "none";
   setAppSectionsVisibility(true);
   refs.userInfo.textContent = `${state.currentUser.username} (${state.currentUser.role})`;
+  syncResponsiveNav();
 }
 
 function showUnauthenticatedUI() {
-  refs.navMenu.style.display = "none";
-  refs.navAuth.style.display = "flex";
-  refs.navUser.style.display = "none";
+  state.isNavOpen = false;
+  setNavAreaVisibility(refs.navMenu, false);
+  setNavAreaVisibility(refs.navAuth, true);
+  setNavAreaVisibility(refs.navUser, false);
   refs.mainContent.style.display = "block";
   refs.authSection.style.display = "flex";
   setAppSectionsVisibility(false);
+  syncResponsiveNav();
 }
 
 function showAuthTab(tabName) {
@@ -403,6 +443,7 @@ function showSection(sectionName) {
   refs.sections.forEach((section) => {
     section.classList.toggle("active", section.id === `${sectionName}Section`);
   });
+  closeNav();
 
   if (sectionName === "dashboard") {
     loadDashboard();
@@ -437,33 +478,53 @@ function renderDashboard(data) {
   const cards = [
     {
       title: "Total Inventory Items",
-      value: data.totalInventory?.count || 0,
+      value: formatNumber(data.totalInventory?.count || 0),
       tone: "primary",
+      icon: "fa-boxes",
+      detail: "Catalog coverage",
+      note: `${formatNumber(data.categoryBreakdown?.length || 0)} active categories`,
     },
     {
       title: "Inventory Value",
       value: formatMoney(data.totalValue?.value || 0),
       tone: "success",
+      icon: "fa-dollar-sign",
+      detail: "Capital tracked",
+      note: "Real-time value across current stock",
     },
     {
       title: "Low Stock Items",
-      value: data.lowStockItems?.count || 0,
+      value: formatNumber(data.lowStockItems?.count || 0),
       tone: (data.lowStockItems?.count || 0) > 0 ? "warning" : "success",
+      icon: "fa-triangle-exclamation",
+      detail: "Needs attention",
+      note:
+        (data.lowStockItems?.count || 0) > 0
+          ? "Restock alerts are currently active"
+          : "Stock thresholds look healthy",
     },
     {
       title: "Active Suppliers",
-      value: data.totalSuppliers?.count || 0,
+      value: formatNumber(data.totalSuppliers?.count || 0),
       tone: "primary",
+      icon: "fa-truck",
+      detail: "Procurement network",
+      note: "Connected suppliers ready for replenishment",
     },
   ];
 
   refs.dashboardGrid.innerHTML = cards
     .map(
       (card) => `
-        <div class="dashboard-card ${card.tone}">
+        <article class="dashboard-card ${card.tone}">
+          <div class="dashboard-card-top">
+            <span class="dashboard-icon"><i class="fas ${card.icon}"></i></span>
+            <span class="dashboard-trend">${escapeHtml(card.detail)}</span>
+          </div>
           <h3>${escapeHtml(card.title)}</h3>
           <div class="value">${escapeHtml(String(card.value))}</div>
-        </div>
+          <p class="dashboard-note">${escapeHtml(card.note)}</p>
+        </article>
       `,
     )
     .join("");
@@ -583,25 +644,37 @@ function renderInventoryTable(items) {
   const canManage = refs.inventoryTableBody.dataset.canManage === "true";
   const canDelete = refs.inventoryTableBody.dataset.canDelete === "true";
 
+  if (!items.length) {
+    refs.inventoryTableBody.innerHTML = renderTableEmptyState(
+      "boxes",
+      "No inventory items yet",
+      "Add your first product to start tracking stock levels, suppliers, and pricing.",
+      8,
+    );
+    return;
+  }
+
   refs.inventoryTableBody.innerHTML = items
     .map((item) => {
-      const status =
-        item.quantity === 0
-          ? { label: "Out of Stock", className: "out-of-stock" }
-          : item.quantity <= item.min_stock_level
-            ? { label: "Low Stock", className: "low-stock" }
-            : { label: "In Stock", className: "in-stock" };
+      const status = getInventoryStatus(item);
+      const productDetail = item.location
+        ? `Location: ${item.location}`
+        : item.description || "Ready for stock monitoring and replenishment.";
+      const priceDetail =
+        item.cost_price !== null && item.cost_price !== undefined
+          ? `Cost ${formatMoney(item.cost_price)}`
+          : "Cost data not set";
 
       const actions = canManage
         ? `
             <div class="action-buttons">
-              <button class="action-btn edit" onclick="editInventory(${item.id})">
+              <button class="action-btn edit" type="button" onclick="editInventory(${item.id})" aria-label="Edit ${escapeHtml(item.product_name)}">
                 <i class="fas fa-edit"></i>
               </button>
               ${
                 canDelete
                   ? `
-                    <button class="action-btn delete" onclick="deleteInventory(${item.id})">
+                    <button class="action-btn delete" type="button" onclick="deleteInventory(${item.id})" aria-label="Delete ${escapeHtml(item.product_name)}">
                       <i class="fas fa-trash"></i>
                     </button>
                   `
@@ -609,18 +682,33 @@ function renderInventoryTable(items) {
               }
             </div>
           `
-        : "<span>-</span>";
+        : '<span class="action-placeholder">View only</span>';
 
       return `
-        <tr>
-          <td>${escapeHtml(item.product_name)}</td>
-          <td>${escapeHtml(item.sku || "N/A")}</td>
-          <td>${escapeHtml(item.category_name || "N/A")}</td>
-          <td>${escapeHtml(item.supplier_name || "N/A")}</td>
-          <td>${item.quantity}</td>
-          <td>${escapeHtml(formatMoney(item.price))}</td>
-          <td><span class="status-badge ${status.className}">${status.label}</span></td>
-          <td>${actions}</td>
+        <tr class="table-row ${status.className}">
+          <td data-label="Product">
+            <div class="table-primary">
+              <span class="table-title">${escapeHtml(item.product_name)}</span>
+              <span class="table-subtitle">${escapeHtml(truncateText(productDetail, 72))}</span>
+            </div>
+          </td>
+          <td data-label="SKU"><span class="table-chip">${escapeHtml(item.sku || "Not set")}</span></td>
+          <td data-label="Category">${escapeHtml(item.category_name || "Uncategorized")}</td>
+          <td data-label="Supplier"><span class="table-meta-pill">${escapeHtml(item.supplier_name || "No supplier")}</span></td>
+          <td data-label="Stock">
+            <div class="table-stat-stack">
+              <strong>${formatNumber(item.quantity)}</strong>
+              <span>Min ${formatNumber(item.min_stock_level || 0)}</span>
+            </div>
+          </td>
+          <td data-label="Price">
+            <div class="table-stat-stack">
+              <strong>${escapeHtml(formatMoney(item.price))}</strong>
+              <span>${escapeHtml(priceDetail)}</span>
+            </div>
+          </td>
+          <td data-label="Status"><span class="status-badge ${status.className}">${status.label}</span></td>
+          <td data-label="Actions">${actions}</td>
         </tr>
       `;
     })
@@ -740,18 +828,32 @@ function renderSuppliersTable(items) {
   const canManage = refs.suppliersTableBody.dataset.canManage === "true";
   const canDelete = refs.suppliersTableBody.dataset.canDelete === "true";
 
+  if (!items.length) {
+    refs.suppliersTableBody.innerHTML = renderTableEmptyState(
+      "truck",
+      "No suppliers added yet",
+      "Create supplier profiles to connect procurement, contact details, and ratings in one place.",
+      6,
+    );
+    return;
+  }
+
   refs.suppliersTableBody.innerHTML = items
     .map((supplier) => {
+      const ratingValue =
+        supplier.rating !== null && supplier.rating !== undefined
+          ? Number(supplier.rating)
+          : null;
       const actions = canManage
         ? `
             <div class="action-buttons">
-              <button class="action-btn edit" onclick="editSupplier(${supplier.id})">
+              <button class="action-btn edit" type="button" onclick="editSupplier(${supplier.id})" aria-label="Edit ${escapeHtml(supplier.name)}">
                 <i class="fas fa-edit"></i>
               </button>
               ${
                 canDelete
                   ? `
-                    <button class="action-btn delete" onclick="deleteSupplier(${supplier.id})">
+                    <button class="action-btn delete" type="button" onclick="deleteSupplier(${supplier.id})" aria-label="Delete ${escapeHtml(supplier.name)}">
                       <i class="fas fa-trash"></i>
                     </button>
                   `
@@ -759,16 +861,32 @@ function renderSuppliersTable(items) {
               }
             </div>
           `
-        : "<span>-</span>";
+        : '<span class="action-placeholder">View only</span>';
 
       return `
-        <tr>
-          <td>${escapeHtml(supplier.name)}</td>
-          <td>${escapeHtml(supplier.email || "N/A")}</td>
-          <td>${escapeHtml(supplier.phone || "N/A")}</td>
-          <td>${escapeHtml(supplier.city)}</td>
-          <td>${supplier.rating ?? "N/A"}</td>
-          <td>${actions}</td>
+        <tr class="table-row">
+          <td data-label="Supplier">
+            <div class="table-primary">
+              <span class="table-title">${escapeHtml(supplier.name)}</span>
+              <span class="table-subtitle">${escapeHtml(truncateText(supplier.address || "Supplier profile ready for procurement workflows.", 72))}</span>
+            </div>
+          </td>
+          <td data-label="Email">${escapeHtml(supplier.email || "No email")}</td>
+          <td data-label="Phone"><span class="table-chip">${escapeHtml(supplier.phone || "No phone")}</span></td>
+          <td data-label="City">${escapeHtml(supplier.city)}</td>
+          <td data-label="Rating">
+            ${
+              ratingValue === null
+                ? '<span class="action-placeholder">Not rated</span>'
+                : `
+                  <span class="rating-pill">
+                    <i class="fas fa-star"></i>
+                    ${escapeHtml(ratingValue.toFixed(1))}
+                  </span>
+                `
+            }
+          </td>
+          <td data-label="Actions">${actions}</td>
         </tr>
       `;
     })
@@ -913,27 +1031,47 @@ function renderSearchResults(items) {
 
   refs.searchResults.innerHTML = items
     .map(
-      (item) => `
-        <div class="result-card">
+      (item) => {
+        const status =
+          Number(item.quantity || 0) === 0
+            ? { label: "Out of Stock", className: "out-of-stock" }
+            : item.is_low_stock
+              ? { label: "Low Stock", className: "low-stock" }
+              : { label: "In Stock", className: "in-stock" };
+        const supportingText = item.sku
+          ? `SKU ${item.sku}`
+          : item.category_name || "Catalog item";
+
+        return `
+        <article class="result-card ${status.className === "low-stock" ? "is-alert" : ""}">
           <div class="result-image">
-            <i class="fas fa-box"></i>
+            <span class="result-image-glow"></span>
+            <i class="fas ${status.className === "out-of-stock" ? "fa-box-open" : "fa-cube"}"></i>
           </div>
           <div class="result-content">
-            <h3 class="result-title">${escapeHtml(item.product_name)}</h3>
+            <div class="result-header">
+              <div>
+                <h3 class="result-title">${escapeHtml(item.product_name)}</h3>
+                <p class="result-subtitle">${escapeHtml(supportingText)}</p>
+              </div>
+              <span class="result-stock-badge ${status.className}">${status.label}</span>
+            </div>
             <div class="result-meta">
               <span class="result-price">${escapeHtml(formatMoney(item.price))}</span>
               <span class="result-supplier">${escapeHtml(item.supplier_name || "Unknown")}</span>
             </div>
-            <p class="result-description">${escapeHtml(item.description || "No description available")}</p>
+            <p class="result-description">${escapeHtml(truncateText(item.description || "No description available for this product yet.", 128))}</p>
             <div class="result-tags">
               <span class="result-tag">${escapeHtml(item.category_name || "Uncategorized")}</span>
+              <span class="result-tag">${escapeHtml(item.sku || "No SKU")}</span>
               <span class="result-tag ${item.is_low_stock ? "low-stock" : ""}">
-                Stock: ${item.quantity}${item.is_low_stock ? " (Low)" : ""}
+                Qty ${formatNumber(item.quantity)}${item.is_low_stock ? " - Low" : ""}
               </span>
             </div>
           </div>
-        </div>
-      `,
+        </article>
+      `;
+      },
     )
     .join("");
 }
@@ -991,62 +1129,115 @@ async function loadAnalytics() {
       apiCall("/analytics/inventory-value"),
       apiCall("/analytics/dashboard"),
     ]);
+    const topSuppliers = inventoryValue.slice(0, 5);
+    const categoryBreakdown = (dashboard.categoryBreakdown || []).slice(0, 5);
+    const maxSupplierValue = Math.max(
+      ...topSuppliers.map((row) => Number(row.total_value || 0)),
+      1,
+    );
+    const maxCategoryValue = Math.max(
+      ...categoryBreakdown.map((row) => Number(row.total_value || 0)),
+      1,
+    );
 
     refs.analyticsGrid.innerHTML = `
-      <div class="analytics-card">
-        <h3>Top Suppliers by Value</h3>
-        <div class="analytics-chart">
-          <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr>
-                <th style="text-align: left; padding: 8px;">Supplier</th>
-                <th style="text-align: right; padding: 8px;">Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${inventoryValue
-                .slice(0, 5)
-                .map(
-                  (row) => `
-                    <tr>
-                      <td style="padding: 8px;">${escapeHtml(row.supplier_name)}</td>
-                      <td style="text-align: right; padding: 8px;">${escapeHtml(formatMoney(row.total_value || 0))}</td>
-                    </tr>
-                  `,
-                )
-                .join("")}
-            </tbody>
-          </table>
+      <article class="analytics-card analytics-summary-card">
+        <div class="analytics-card-head">
+          <div>
+            <span class="analytics-kicker">Snapshot</span>
+            <h3>Operational performance at a glance</h3>
+          </div>
+          <span class="analytics-badge">Live overview</span>
         </div>
-      </div>
-      <div class="analytics-card">
-        <h3>Inventory by Category</h3>
-        <div class="analytics-chart">
-          <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr>
-                <th style="text-align: left; padding: 8px;">Category</th>
-                <th style="text-align: right; padding: 8px;">Items</th>
-                <th style="text-align: right; padding: 8px;">Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${dashboard.categoryBreakdown
-                .slice(0, 5)
-                .map(
-                  (row) => `
-                    <tr>
-                      <td style="padding: 8px;">${escapeHtml(row.name)}</td>
-                      <td style="text-align: right; padding: 8px;">${row.item_count}</td>
-                      <td style="text-align: right; padding: 8px;">${escapeHtml(formatMoney(row.total_value || 0))}</td>
-                    </tr>
-                  `,
-                )
-                .join("")}
-            </tbody>
-          </table>
+        <div class="analytics-summary-grid">
+          <div class="analytics-stat">
+            <span>Total stock value</span>
+            <strong>${escapeHtml(formatMoney(dashboard.totalValue?.value || 0))}</strong>
+          </div>
+          <div class="analytics-stat">
+            <span>Inventory items</span>
+            <strong>${formatNumber(dashboard.totalInventory?.count || 0)}</strong>
+          </div>
+          <div class="analytics-stat">
+            <span>Low stock alerts</span>
+            <strong>${formatNumber(dashboard.lowStockItems?.count || 0)}</strong>
+          </div>
+          <div class="analytics-stat">
+            <span>Supplier partners</span>
+            <strong>${formatNumber(dashboard.totalSuppliers?.count || 0)}</strong>
+          </div>
         </div>
-      </div>
+      </article>
+      <article class="analytics-card">
+        <div class="analytics-card-head">
+          <div>
+            <span class="analytics-kicker">Suppliers</span>
+            <h3>Top suppliers by inventory value</h3>
+          </div>
+          <span class="analytics-badge">${formatNumber(topSuppliers.length)} tracked</span>
+        </div>
+        <div class="analytics-list">
+          ${
+            topSuppliers.length
+              ? topSuppliers
+                  .map(
+                    (row) => `
+                      <div class="analytics-row">
+                        <div class="analytics-row-copy">
+                          <strong>${escapeHtml(row.supplier_name || "Unknown supplier")}</strong>
+                          <span>${escapeHtml(formatMoney(row.total_value || 0))}</span>
+                        </div>
+                        <div class="analytics-bar">
+                          <span style="width: ${calculatePercent(row.total_value || 0, maxSupplierValue)}%"></span>
+                        </div>
+                      </div>
+                    `,
+                  )
+                  .join("")
+              : `
+                <div class="analytics-empty">
+                  <i class="fas fa-chart-line"></i>
+                  <p>Supplier value data will appear here once inventory records are active.</p>
+                </div>
+              `
+          }
+        </div>
+      </article>
+      <article class="analytics-card">
+        <div class="analytics-card-head">
+          <div>
+            <span class="analytics-kicker">Categories</span>
+            <h3>Inventory distribution by category</h3>
+          </div>
+          <span class="analytics-badge">${formatNumber(categoryBreakdown.length)} groups</span>
+        </div>
+        <div class="analytics-list">
+          ${
+            categoryBreakdown.length
+              ? categoryBreakdown
+                  .map(
+                    (row) => `
+                      <div class="analytics-row">
+                        <div class="analytics-row-copy">
+                          <strong>${escapeHtml(row.name || "Uncategorized")}</strong>
+                          <span>${formatNumber(row.item_count || 0)} items - ${escapeHtml(formatMoney(row.total_value || 0))}</span>
+                        </div>
+                        <div class="analytics-bar">
+                          <span style="width: ${calculatePercent(row.total_value || 0, maxCategoryValue)}%"></span>
+                        </div>
+                      </div>
+                    `,
+                  )
+                  .join("")
+              : `
+                <div class="analytics-empty">
+                  <i class="fas fa-layer-group"></i>
+                  <p>Category insights will populate after products are added to inventory.</p>
+                </div>
+              `
+          }
+        </div>
+      </article>
     `;
   } catch (error) {
     showToast(error.message, "error");
@@ -1203,6 +1394,55 @@ function formatMoney(value) {
     style: "currency",
     currency: "USD",
   }).format(Number(value || 0));
+}
+
+function formatNumber(value) {
+  return new Intl.NumberFormat("en-US").format(Number(value || 0));
+}
+
+function truncateText(value, maxLength = 120) {
+  const text = String(value || "").trim();
+  if (!text || text.length <= maxLength) {
+    return text;
+  }
+
+  return `${text.slice(0, maxLength - 3).trimEnd()}...`;
+}
+
+function getInventoryStatus(item) {
+  if (Number(item.quantity || 0) === 0) {
+    return { label: "Out of Stock", className: "out-of-stock" };
+  }
+  if (Number(item.quantity || 0) <= Number(item.min_stock_level || 0)) {
+    return { label: "Low Stock", className: "low-stock" };
+  }
+
+  return { label: "In Stock", className: "in-stock" };
+}
+
+function renderTableEmptyState(icon, title, message, colspan) {
+  return `
+    <tr class="table-empty-row">
+      <td colspan="${colspan}">
+        <div class="table-empty-state">
+          <i class="fas fa-${icon}"></i>
+          <h3>${escapeHtml(title)}</h3>
+          <p>${escapeHtml(message)}</p>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+function calculatePercent(value, maxValue) {
+  const numericValue = Number(value || 0);
+  const numericMax = Number(maxValue || 0);
+
+  if (!numericMax || !numericValue) {
+    return 0;
+  }
+
+  return Math.max(12, Math.min(100, Math.round((numericValue / numericMax) * 100)));
 }
 
 function escapeHtml(text) {
