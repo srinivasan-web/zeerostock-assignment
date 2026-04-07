@@ -1,10 +1,18 @@
+const fs = require("fs");
 const sqlite3 = require("sqlite3").verbose();
 const path = require("path");
 
 const configuredPath = process.env.DB_PATH || "database.db";
-const dbPath = path.isAbsolute(configuredPath)
-  ? configuredPath
-  : path.join(__dirname, configuredPath);
+const isSpecialSqlitePath =
+  configuredPath === ":memory:" || configuredPath.startsWith("file:");
+const dbPath =
+  isSpecialSqlitePath || path.isAbsolute(configuredPath)
+    ? configuredPath
+    : path.join(__dirname, configuredPath);
+
+if (!isSpecialSqlitePath) {
+  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+}
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {

@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: zeerostock-app
+    runtime: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: RATE_LIMIT_WINDOW
+        value: 900000
+      - key: RATE_LIMIT_MAX
+        value: 100

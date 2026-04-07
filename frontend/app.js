@@ -1,5 +1,11 @@
-const API_BASE =
-  window.location.protocol === "file:"
+const configuredApiBase =
+  window.APP_CONFIG && typeof window.APP_CONFIG.API_BASE === "string"
+    ? window.APP_CONFIG.API_BASE.trim().replace(/\/$/, "")
+    : "";
+
+const API_BASE = configuredApiBase
+  ? configuredApiBase
+  : window.location.protocol === "file:"
     ? "http://localhost:3000/api"
     : `${window.location.origin}/api`;
 

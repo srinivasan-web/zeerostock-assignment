@@ -781,6 +781,74 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 For support, email support@zeerostock.com or create an issue in the repository.
 
+## Direct Deployment
+
+### Option 1: Render Only (Recommended)
+
+This repository is now ready for a single-service Render deploy where the backend serves the frontend.
+
+1. Push the latest code to GitHub.
+2. In Render, create a new Blueprint or Web Service from this repository.
+3. If you use the included `render.yaml`, Render will use:
+   - Build command: `cd backend && npm install`
+   - Start command: `cd backend && npm start`
+   - Health check: `/api/health`
+4. Set `JWT_SECRET` if you are configuring the service manually.
+
+Notes:
+- The server now auto-initializes the SQLite schema on startup.
+- This free setup uses the repo's local SQLite file and is fine for demos.
+- Render's default filesystem is ephemeral, so SQLite data will not persist across rebuilds unless you attach a persistent disk and set `DB_PATH` and `UPLOAD_DIR` to that mounted path.
+
+Suggested persistent-disk values on Render:
+
+```env
+DB_PATH=/opt/render/project/src/data/database.db
+UPLOAD_DIR=/opt/render/project/src/data/uploads
+```
+
+### Option 2: Split Deploy (Vercel Frontend + Render Backend)
+
+Use this if you want the frontend and backend on different hosts.
+
+#### Backend on Render
+
+1. Create a Render Web Service from this repository.
+2. Use:
+   - Build command: `cd backend && npm install`
+   - Start command: `cd backend && npm start`
+   - Health check path: `/api/health`
+3. Set environment variables:
+
+```env
+NODE_ENV=production
+JWT_SECRET=change-me
+FRONTEND_URL=https://your-frontend-domain.vercel.app
+```
+
+4. For persistent SQLite data, also set:
+
+```env
+DB_PATH=/opt/render/project/src/data/database.db
+UPLOAD_DIR=/opt/render/project/src/data/uploads
+```
+
+#### Frontend on Vercel
+
+1. Import this repository into Vercel.
+2. Set the project Root Directory to `frontend`.
+3. Before deploying, set the backend API URL in `frontend/config.js`:
+
+```js
+window.APP_CONFIG = {
+  API_BASE: "https://your-backend-service.onrender.com/api",
+};
+```
+
+4. Deploy the project.
+
+This keeps the frontend talking to the Render API even though they are on different domains.
+
 ## 🙏 Acknowledgments
 
 - Font Awesome for icons
