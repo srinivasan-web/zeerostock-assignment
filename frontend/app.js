@@ -1,3 +1,5 @@
+const DEPLOYED_API_BASE = "https://zeerostock-assignment-9rpe.onrender.com/api";
+
 const configuredApiBase =
   window.APP_CONFIG && typeof window.APP_CONFIG.API_BASE === "string"
     ? window.APP_CONFIG.API_BASE.trim().replace(/\/$/, "")
@@ -5,6 +7,8 @@ const configuredApiBase =
 
 const API_BASE = configuredApiBase
   ? configuredApiBase
+  : window.location.hostname.endsWith(".vercel.app")
+    ? DEPLOYED_API_BASE
   : window.location.protocol === "file:"
     ? "http://localhost:3000/api"
     : `${window.location.origin}/api`;
