@@ -1,5 +1,3 @@
-const DEPLOYED_API_BASE = "https://zeerostock-assignment-9rpe.onrender.com/api";
-
 const configuredApiBase =
   window.APP_CONFIG && typeof window.APP_CONFIG.API_BASE === "string"
     ? window.APP_CONFIG.API_BASE.trim().replace(/\/$/, "")
@@ -7,8 +5,6 @@ const configuredApiBase =
 
 const API_BASE = configuredApiBase
   ? configuredApiBase
-  : window.location.hostname.endsWith(".vercel.app")
-    ? DEPLOYED_API_BASE
   : window.location.protocol === "file:"
     ? "http://localhost:3000/api"
     : `${window.location.origin}/api`;
@@ -240,6 +236,15 @@ async function apiCall(endpoint, options = {}) {
     return payload;
   } catch (error) {
     if (error instanceof TypeError) {
+      if (
+        window.location.hostname.endsWith(".vercel.app") ||
+        window.location.hostname.endsWith(".onrender.com")
+      ) {
+        throw new Error(
+          "The deployed frontend could not reach the API. Redeploy the latest frontend build and verify the frontend proxy or backend availability.",
+        );
+      }
+
       throw new Error(
         'Backend is not reachable. Start it with "cd backend && npm start", then open http://localhost:3000.',
       );

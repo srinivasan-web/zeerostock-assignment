@@ -23,8 +23,9 @@ const db = require("./db");
 const app = express();
 
 const PORT = Number(process.env.PORT) || 3000;
-const FRONTEND_URL =
-  process.env.FRONTEND_URL || `http://localhost:${PORT}`;
+const FRONTEND_URL = normalizeOrigin(process.env.FRONTEND_URL) || `http://localhost:${PORT}`;
+const FRONTEND_URLS = parseOriginList(process.env.FRONTEND_URLS);
+const VERCEL_PROJECT_PREFIX = (process.env.VERCEL_PROJECT_PREFIX || "zeerostock-assignment").trim();
 const JWT_SECRET =
   process.env.JWT_SECRET || "your-secret-key-change-in-production";
 const RATE_LIMIT_WINDOW =
@@ -35,11 +36,60 @@ const UPLOAD_DIR = path.resolve(__dirname, process.env.UPLOAD_DIR || "uploads");
 const FRONTEND_DIR = path.resolve(__dirname, "../frontend");
 const allowedOrigins = new Set([
   FRONTEND_URL,
+  ...FRONTEND_URLS,
   "http://localhost:3000",
   "http://127.0.0.1:3000",
   "http://localhost:3001",
   "http://127.0.0.1:3001",
 ]);
+
+function normalizeOrigin(value) {
+  if (!value || typeof value !== "string") {
+    return "";
+  }
+
+  return value.trim().replace(/\/+$/, "");
+}
+
+function parseOriginList(value) {
+  if (!value || typeof value !== "string") {
+    return [];
+  }
+
+  return value
+    .split(",")
+    .map((origin) => normalizeOrigin(origin))
+    .filter(Boolean);
+}
+
+function isTrustedVercelPreview(origin) {
+  if (!origin || !VERCEL_PROJECT_PREFIX) {
+    return false;
+  }
+
+  try {
+    const { hostname, protocol } = new URL(origin);
+    return (
+      protocol === "https:" &&
+      hostname.endsWith(".vercel.app") &&
+      hostname.startsWith(VERCEL_PROJECT_PREFIX)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isAllowedOrigin(origin) {
+  if (!origin || origin === "null") {
+    return true;
+  }
+
+  const normalizedOrigin = normalizeOrigin(origin);
+  return (
+    allowedOrigins.has(normalizedOrigin) ||
+    isTrustedVercelPreview(normalizedOrigin)
+  );
+}
 
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -56,7 +106,7 @@ app.use(
           "https://fonts.googleapis.com",
         ],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        scriptSrc: ["'self'", "https://cdn.tailwindcss.com"],
+        scriptSrc: ["'self'"],
         imgSrc: ["'self'", "data:", "https:"],
       },
     },
@@ -66,7 +116,7 @@ app.use(
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || origin === "null" || allowedOrigins.has(origin)) {
+      if (isAllowedOrigin(origin)) {
         callback(null, true);
         return;
       }
@@ -1138,7 +1188,7 @@ app.get("/api/realtime/updates", authenticateToken, async (req, res) => {
     "Cache-Control": "no-cache",
     Connection: "keep-alive",
     "Access-Control-Allow-Origin":
-      req.headers.origin && req.headers.origin !== "null"
+      req.headers.origin && isAllowedOrigin(req.headers.origin)
         ? req.headers.origin
         : FRONTEND_URL,
   });

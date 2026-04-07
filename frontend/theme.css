@@ -39,6 +39,10 @@ body {
     linear-gradient(180deg, #fbfaf7 0%, #f5f7f7 42%, #eef6f5 100%);
 }
 
+.navbar-shell {
+  padding: 1rem;
+}
+
 button,
 input,
 select,
@@ -113,7 +117,20 @@ textarea {
 }
 
 .nav-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
+  max-width: 80rem;
+  margin: 0 auto;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 2rem;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 30px 80px -35px rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(24px);
 }
 
 .nav-brand {
@@ -280,9 +297,27 @@ textarea {
   width: 100%;
 }
 
+.user-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #334155;
+  font-size: 0.9rem;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+
 .main-content {
   position: relative;
   z-index: 10;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 5rem;
 }
 
 .section {
@@ -393,11 +428,26 @@ textarea {
 }
 
 .auth-shell {
+  display: grid;
+  width: 100%;
+  max-width: 72rem;
+  overflow: hidden;
   border-radius: 2rem;
   align-items: stretch;
 }
 
+.auth-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 78vh;
+  padding: 1.5rem 0 2.5rem;
+}
+
 .auth-visual {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
   position: relative;
   min-height: 100%;
   padding: 3rem;
@@ -1566,6 +1616,37 @@ textarea {
 
   .search-results {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 640px) {
+  .navbar-shell {
+    padding: 1rem 1.5rem;
+  }
+
+  .main-content {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .navbar-shell {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .main-content {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .auth-shell {
+    grid-template-columns: 1.08fr 0.92fr;
+  }
+
+  .auth-visual {
+    display: flex;
   }
 }
 
