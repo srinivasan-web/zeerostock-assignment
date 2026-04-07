@@ -56,7 +56,7 @@ app.use(
           "https://fonts.googleapis.com",
         ],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        scriptSrc: ["'self'"],
+        scriptSrc: ["'self'", "https://cdn.tailwindcss.com"],
         imgSrc: ["'self'", "data:", "https:"],
       },
     },
